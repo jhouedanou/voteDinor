@@ -146,6 +146,12 @@
               <p class="candidate-votes text-dinor-red-vintage font-semibold mb-3">
                 ❤️ {{ candidate.votes_count }} votes
               </p>
+              
+              <!-- Partage social pour utilisateurs connectés -->
+              <div v-if="user" class="mb-3">
+                <SocialShare :candidate="candidate" />
+              </div>
+              
               <!-- Si utilisateur non connecté -->
               <button 
                 v-if="!user"
@@ -325,18 +331,33 @@ const vote = async (candidateId) => {
   try {
     loading.value = true
     
-    // TODO: Implement vote submission with reCAPTCHA
-    userVotesToday.value.add(candidateId)
+    // Appeler l'API de vote avec l'auth token
+    const { data: session } = await supabase.auth.getSession()
     
-    // Update candidate votes count locally
-    const candidate = candidates.value.find(c => c.id === candidateId)
-    if (candidate) {
-      candidate.votes_count++
+    const response = await $fetch('/api/vote', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session?.session?.access_token}`
+      },
+      body: {
+        candidate_id: candidateId
+      }
+    })
+    
+    if (response.success) {
+      // Marquer comme voté localement
+      userVotesToday.value.add(candidateId)
+      
+      // Mettre à jour le compteur local
+      const candidate = candidates.value.find(c => c.id === candidateId)
+      if (candidate) {
+        candidate.votes_count++
+      }
+      
+      showToast(response.message || 'Vote enregistré avec succès !', 'success')
     }
-    
-    showToast('Vote enregistré !', 'success')
   } catch (error) {
-    showToast('Erreur lors du vote: ' + error.message, 'error')
+    showToast('Erreur lors du vote: ' + (error.data?.message || error.message), 'error')
   } finally {
     loading.value = false
   }

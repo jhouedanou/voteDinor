@@ -3,53 +3,63 @@ import { createClient } from '@supabase/supabase-js'
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
-  
-  // reCAPTCHA verification function
-  async function verifyRecaptcha(token: string) {
-    const secretKey = config.recaptchaSecretKey
-    if (!secretKey) {
-      throw new Error('reCAPTCHA secret key not configured')
-    }
-    
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `secret=${secretKey}&response=${token}`
-    })
-    
-    const data = await response.json()
-    return data.success && data.score > 0.5
-  }
 
   try {
     const body = await readBody(event)
-    const { candidate_id, recaptcha_token } = body
+    const { candidate_id } = body
+    
+    // Récupérer l'utilisateur authentifié
+    const authHeader = getHeader(event, 'authorization')
+    if (!authHeader) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Authentification requise pour voter'
+      })
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    
+    if (authError || !user) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Token invalide'
+      })
+    }
     
     // Get client IP
     const ip_address = getClientIP(event) || '127.0.0.1'
     const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
     
-    // Verify reCAPTCHA
-    const recaptchaValid = await verifyRecaptcha(recaptcha_token)
-    if (!recaptchaValid) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Vérification anti-spam échouée'
-      })
-    }
-    
-    // Check rate limiting (1 vote/candidate/day/IP)
-    const vote_limit_id = `${ip_address}_${candidate_id}_${today}`
+    // Vérifier si l'utilisateur a déjà voté pour ce candidat aujourd'hui
     const { data: existingVote } = await supabase
-      .from('vote_limits')
+      .from('votes')
       .select('id')
-      .eq('id', vote_limit_id)
+      .eq('candidate_id', candidate_id)
+      .eq('user_id', user.id)
+      .eq('vote_date', today)
       .single()
     
     if (existingVote) {
       throw createError({
         statusCode: 429,
         statusMessage: 'Vous avez déjà voté pour ce candidat aujourd\'hui'
+      })
+    }
+    
+    // Vérifier si l'IP a déjà voté pour ce candidat aujourd'hui
+    const { data: existingIpVote } = await supabase
+      .from('votes')
+      .select('id')
+      .eq('candidate_id', candidate_id)
+      .eq('ip_address', ip_address)
+      .eq('vote_date', today)
+      .single()
+    
+    if (existingIpVote) {
+      throw createError({
+        statusCode: 429,
+        statusMessage: 'Cette adresse IP a déjà voté pour ce candidat aujourd\'hui'
       })
     }
     
@@ -74,51 +84,27 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Execute transaction-like operations
-    try {
-      // 1. Insert vote record
-      const { error: voteError } = await supabase
-        .from('votes')
-        .insert({
-          candidate_id,
-          ip_address,
-          vote_date: today,
-          user_agent: getHeader(event, 'user-agent') || 'unknown'
-        })
-      
-      if (voteError) throw voteError
-      
-      // 2. Insert vote limit record
-      const { error: limitError } = await supabase
-        .from('vote_limits')
-        .insert({
-          id: vote_limit_id,
-          ip_address,
-          candidate_id,
-          vote_date: today,
-          vote_count: 1
-        })
-      
-      if (limitError) throw limitError
-      
-      // 3. Increment candidate vote count
-      const { error: updateError } = await supabase
-        .from('candidates')
-        .update({ votes_count: candidate.votes_count + 1 })
-        .eq('id', candidate_id)
-      
-      if (updateError) throw updateError
-      
-      return { 
-        success: true, 
-        message: 'Vote enregistré !' 
-      }
-    } catch (transactionError) {
-      // In a real app, you'd want to implement rollback logic here
+    // Insérer le vote
+    const { error: voteError } = await supabase
+      .from('votes')
+      .insert({
+        candidate_id,
+        user_id: user.id,
+        ip_address,
+        vote_date: today,
+        user_agent: getHeader(event, 'user-agent') || 'unknown'
+      })
+    
+    if (voteError) {
       throw createError({
         statusCode: 500,
-        statusMessage: 'Erreur lors de l\'enregistrement du vote: ' + transactionError.message
+        statusMessage: 'Erreur lors de l\'enregistrement du vote: ' + voteError.message
       })
+    }
+    
+    return { 
+      success: true, 
+      message: 'Vote enregistré avec succès !' 
     }
     
   } catch (error) {
