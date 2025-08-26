@@ -297,6 +297,12 @@ const handleParticipate = () => {
     showLoginModal.value = true
     return
   }
+  
+  if (isUserCandidate.value) {
+    showToast('Vous êtes déjà candidat au concours !', 'error')
+    return
+  }
+  
   showRegistrationModal.value = true
 }
 
