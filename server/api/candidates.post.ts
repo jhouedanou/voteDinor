@@ -1,8 +1,9 @@
-import { supabase } from '~/utils/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { v2 as cloudinary } from 'cloudinary'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
+  const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey)
   
   // Configuration Cloudinary
   cloudinary.config({
