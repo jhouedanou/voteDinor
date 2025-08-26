@@ -1,4 +1,4 @@
-import { supabase } from '~/plugins/supabase.client'
+import { supabase } from '~/utils/supabase'
 import { v2 as cloudinary } from 'cloudinary'
 
 export default defineEventHandler(async (event) => {
@@ -10,23 +10,6 @@ export default defineEventHandler(async (event) => {
     api_key: config.cloudinaryApiKey,
     api_secret: config.cloudinaryApiSecret
   })
-
-  // reCAPTCHA verification function
-  async function verifyRecaptcha(token: string) {
-    const secretKey = config.recaptchaSecretKey
-  if (!secretKey) {
-    throw new Error('reCAPTCHA secret key not configured')
-  }
-  
-  const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `secret=${secretKey}&response=${token}`
-  })
-  
-  const data = await response.json()
-  return data.success && data.score > 0.5
-}
 
   // reCAPTCHA verification function
   async function verifyRecaptcha(token: string) {

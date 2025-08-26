@@ -1,4 +1,4 @@
-import { supabase } from '~/plugins/supabase.client'
+import { supabase } from '~/utils/supabase'
 
 export default defineEventHandler(async (event) => {
   try {
