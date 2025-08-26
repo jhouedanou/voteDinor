@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 export default defineEventHandler(async (event) => {
   try {
     const config = useRuntimeConfig()
-    const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+    const supabase = createClient(config.public.supabaseUrl, config.supabaseServiceKey || config.public.supabaseAnonKey)
     
     const { email } = await readBody(event)
     
@@ -14,8 +14,27 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // Option pour désactiver temporairement l'envoi d'email
+    const disableEmail = process.env.DISABLE_EMAIL === 'true'
+    if (disableEmail) {
+      console.log('Reset password simulé pour:', email)
+      return {
+        success: true,
+        message: 'Email de réinitialisation simulé (service désactivé)'
+      }
+    }
+    
     // Vérifier si l'email existe dans la base
-    const { data: user } = await supabase.auth.admin.getUserByEmail(email)
+    const { data: user, error: userError } = await supabase.auth.admin.getUserByEmail(email)
+    
+    if (userError) {
+      console.error('Erreur vérification utilisateur:', userError)
+      // Ne pas révéler l'erreur pour des raisons de sécurité
+      return {
+        success: true,
+        message: 'Si votre email est dans notre base, vous recevrez un lien de réinitialisation.'
+      }
+    }
     
     if (!user) {
       // Ne pas révéler si l'email existe ou non pour des raisons de sécurité
@@ -82,20 +101,44 @@ export default defineEventHandler(async (event) => {
     // Envoyer l'email via HeroTofu
     const heroToFuEndpoint = 'https://public.herotofu.com/v1/5a33db80-8283-11f0-b600-1fdb6134186f'
     
-    const response = await fetch(heroToFuEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        to: email,
-        subject: '🔐 Réinitialisation de votre mot de passe DINOR',
-        message: emailContent
-      })
-    })
+    const emailData = {
+      to: email,
+      subject: '🔐 Réinitialisation de votre mot de passe DINOR',
+      message: emailContent
+    }
     
-    if (!response.ok) {
-      throw new Error(`HeroTofu error: ${response.statusText}`)
+    console.log('Envoi email reset password HeroTofu:', { email })
+    
+    try {
+      const response = await fetch(heroToFuEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(emailData)
+      })
+      
+      const responseText = await response.text()
+      console.log('Réponse HeroTofu reset password:', response.status, responseText)
+      
+      if (!response.ok) {
+        console.error('Erreur HeroTofu reset password:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText,
+          emailData
+        })
+        
+        if (response.status === 422) {
+          throw new Error(`Format d'email invalide pour HeroTofu: ${responseText}`)
+        }
+        
+        throw new Error(`HeroTofu error: ${response.status} ${response.statusText} - ${responseText}`)
+      }
+    } catch (fetchError: any) {
+      console.error('Erreur fetch HeroTofu reset password:', fetchError)
+      throw new Error(`Erreur réseau HeroTofu: ${fetchError.message || 'Erreur inconnue'}`)
     }
     
     // Stocker temporairement le token (dans un vrai système, utilisez Redis ou la base)
