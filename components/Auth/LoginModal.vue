@@ -20,8 +20,8 @@
         </button>
       </div>
 
-      <!-- Connexion avec Google (désactivé temporairement) -->
-      <div class="mb-6" v-if="false">
+      <!-- Connexion avec Google -->
+      <div class="mb-6">
         <button 
           @click="signInWithGoogle"
           :disabled="loading"
@@ -37,9 +37,10 @@
         </button>
       </div>
 
-      <!-- Notification pour Google OAuth -->
-      <div class="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-        📝 <strong>Google OAuth :</strong> Activez le provider Google dans votre Supabase Dashboard pour utiliser cette fonctionnalité.
+      <div class="mb-4 flex items-center">
+        <div class="flex-grow border-t border-dinor-beige"></div>
+        <span class="px-4 text-sm text-dinor-brown">ou</span>
+        <div class="flex-grow border-t border-dinor-beige"></div>
       </div>
 
       <!-- Formulaire de connexion -->
