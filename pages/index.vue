@@ -106,13 +106,27 @@
               >
               <div v-if="!photoPreview" @click="$refs.photoInput.click()" class="cursor-pointer">
                 <div class="text-4xl mb-2">📸</div>
-                <p class="text-dinor-brown">Cliquez pour ajouter votre photo</p>
+                <p class="text-dinor-brown font-medium">Cliquez pour ajouter votre photo</p>
+                <p class="text-sm text-dinor-brown mt-2">
+                  <span class="bg-dinor-beige px-2 py-1 rounded">📏 Maximum 2MB</span>
+                </p>
+                <p class="text-xs text-dinor-brown mt-1 opacity-75">
+                  Formats acceptés : JPG, PNG, GIF
+                </p>
               </div>
               <div v-else class="space-y-4">
-                <img :src="photoPreview" alt="Aperçu photo" class="w-32 h-32 object-cover rounded-lg mx-auto">
+                <div class="relative">
+                  <img :src="photoPreview" alt="Aperçu photo" class="w-32 h-32 object-cover rounded-lg mx-auto">
+                  <div class="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                    {{ form.photo ? (form.photo.size / 1024 / 1024).toFixed(1) + 'MB' : '' }}
+                  </div>
+                </div>
                 <button @click="$refs.photoInput.click()" type="button" class="text-dinor-orange hover:text-dinor-brown">
                   Changer la photo
                 </button>
+                <p class="text-xs text-dinor-brown opacity-75">
+                  ✓ Image conforme (max 2MB)
+                </p>
               </div>
             </div>
           </div>
@@ -327,12 +341,32 @@ const scrollToGallery = () => {
 const handlePhotoSelect = (event) => {
   const file = event.target.files[0]
   if (file) {
+    // Vérifier la taille (2MB max)
+    const maxSize = 2 * 1024 * 1024 // 2MB en bytes
+    if (file.size > maxSize) {
+      showToast('L\'image ne doit pas dépasser 2MB. Taille actuelle: ' + (file.size / 1024 / 1024).toFixed(1) + 'MB', 'error')
+      // Reset l'input
+      event.target.value = ''
+      return
+    }
+    
+    // Vérifier le type de fichier
+    if (!file.type.startsWith('image/')) {
+      showToast('Seules les images sont acceptées (JPG, PNG, GIF)', 'error')
+      event.target.value = ''
+      return
+    }
+    
     form.value.photo = file
     const reader = new FileReader()
     reader.onload = (e) => {
       photoPreview.value = e.target.result
     }
     reader.readAsDataURL(file)
+    
+    // Afficher la taille de l'image sélectionnée
+    const sizeInMB = (file.size / 1024 / 1024).toFixed(1)
+    showToast(`Image sélectionnée (${sizeInMB}MB) ✓`, 'success')
   }
 }
 
@@ -347,32 +381,75 @@ const submitRegistration = async () => {
   try {
     loading.value = true
     
+    // Vérifications
+    if (!user.value) {
+      showToast('Vous devez être connecté pour participer', 'error')
+      return
+    }
+    
+    if (!form.value.photo) {
+      showToast('Veuillez sélectionner une photo', 'error')
+      return
+    }
+    
     // Validate Ivorian phone number
     if (!form.value.whatsapp.startsWith('+225')) {
       showToast('Numéro WhatsApp ivoirien requis (+225)', 'error')
       return
     }
-
-    // Envoyer email de notification d'inscription candidat
-    try {
-      await $fetch('/api/send-email', {
-        method: 'POST',
-        body: {
-          type: 'candidate_registration',
-          email: 'admin@dinor.ci', // Email admin pour notification
-          candidateName: `${form.value.prenom} ${form.value.nom}`
-        }
-      })
-    } catch (emailError) {
-      console.error('Erreur envoi email admin:', emailError)
+    
+    // Convertir la photo en base64 pour l'API
+    const reader = new FileReader()
+    const photoBase64 = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(form.value.photo)
+    })
+    
+    // Récupérer le token de session
+    const supabase = useSupabaseClient()
+    const { data: session } = await supabase.auth.getSession()
+    
+    // Envoyer l'inscription avec la photo
+    const response = await $fetch('/api/candidates', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session?.session?.access_token}`
+      },
+      body: {
+        nom: form.value.nom,
+        prenom: form.value.prenom,
+        whatsapp: form.value.whatsapp,
+        photo_data: photoBase64
+      }
+    })
+    
+    if (response.success) {
+      // Envoyer email de notification d'inscription candidat
+      try {
+        await $fetch('/api/send-email', {
+          method: 'POST',
+          body: {
+            type: 'candidate_registration',
+            email: 'admin@dinor.ci', // Email admin pour notification
+            candidateName: `${form.value.prenom} ${form.value.nom}`
+          }
+        })
+      } catch (emailError) {
+        console.error('Erreur envoi email admin:', emailError)
+      }
+      
+      // Recharger les candidats pour mettre à jour l'interface
+      await loadCandidates()
+      
+      // Rediriger vers la page de remerciement
+      showToast('Inscription soumise avec succès !', 'success')
+      closeModal()
+      await navigateTo('/merci')
     }
     
-    // Rediriger vers la page de remerciement
-    showToast('Inscription soumise avec succès !', 'success')
-    closeModal()
-    await navigateTo('/merci')
   } catch (error) {
-    showToast('Erreur lors de l\'inscription: ' + error.message, 'error')
+    showToast('Erreur lors de l\'inscription: ' + (error.data?.message || error.message), 'error')
   } finally {
     loading.value = false
   }

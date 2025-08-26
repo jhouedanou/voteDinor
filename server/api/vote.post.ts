@@ -109,9 +109,23 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // Mettre à jour manuellement le compteur de votes
+    const { error: updateError } = await supabase
+      .from('candidates')
+      .update({ 
+        votes_count: candidate.votes_count + 1 
+      })
+      .eq('id', candidate_id)
+    
+    if (updateError) {
+      console.error('Erreur mise à jour compteur:', updateError)
+      // Ne pas faire échouer le vote pour ça
+    }
+    
     return { 
       success: true, 
-      message: 'Vote enregistré avec succès !' 
+      message: 'Vote enregistré avec succès !',
+      new_vote_count: candidate.votes_count + 1
     }
     
   } catch (error) {

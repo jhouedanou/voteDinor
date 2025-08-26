@@ -3,7 +3,11 @@ import { v2 as cloudinary } from 'cloudinary'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
-  const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+  // Utiliser la clé service pour bypasser RLS
+  const supabase = createClient(
+    config.public.supabaseUrl, 
+    config.supabaseServiceKey || config.public.supabaseAnonKey
+  )
   
   // Configuration Cloudinary
   cloudinary.config({
@@ -12,35 +16,28 @@ export default defineEventHandler(async (event) => {
     api_secret: config.cloudinaryApiSecret
   })
 
-  // reCAPTCHA verification function
-  async function verifyRecaptcha(token: string) {
-    const secretKey = config.recaptchaSecretKey
-    if (!secretKey) {
-      throw new Error('reCAPTCHA secret key not configured')
-    }
-    
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `secret=${secretKey}&response=${token}`
-    })
-    
-    const data = await response.json()
-    return data.success && data.score > 0.5
-  }
-
   try {
-    const body = await readBody(event)
-    const { nom, prenom, whatsapp, photo_data, recaptcha_token } = body
-    
-    // Verify reCAPTCHA
-    const recaptchaValid = await verifyRecaptcha(recaptcha_token)
-    if (!recaptchaValid) {
+    // Récupérer l'utilisateur authentifié
+    const authHeader = getHeader(event, 'authorization')
+    if (!authHeader) {
       throw createError({
-        statusCode: 400,
-        statusMessage: 'Vérification anti-spam échouée'
+        statusCode: 401,
+        statusMessage: 'Authentification requise'
       })
     }
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    
+    if (authError || !user) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'Token invalide'
+      })
+    }
+
+    const body = await readBody(event)
+    const { nom, prenom, whatsapp, photo_data } = body
     
     // Validate Ivorian phone number
     if (!whatsapp.startsWith('+225')) {
@@ -74,15 +71,30 @@ export default defineEventHandler(async (event) => {
       }
     }
     
+    // Vérifier si l'utilisateur est déjà candidat
+    const { data: existingCandidate } = await supabase
+      .from('candidates')
+      .select('id')
+      .eq('email', user.email)
+      .single()
+    
+    if (existingCandidate) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Vous êtes déjà inscrit au concours'
+      })
+    }
+
     // Save candidate to Supabase
     const { data: candidate, error } = await supabase
       .from('candidates')
       .insert({
         nom: nom.trim(),
         prenom: prenom.trim(),
+        email: user.email,
         whatsapp: whatsapp.trim(),
         photo_url,
-        photo_filename,
+        description: `Candidat ${prenom} ${nom}`,
         votes_count: 0,
         status: 'pending'
       })

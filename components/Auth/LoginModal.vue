@@ -74,6 +74,17 @@
         >
           {{ loading ? 'Connexion...' : 'Se connecter' }}
         </button>
+        
+        <!-- Lien mot de passe oublié -->
+        <div class="text-center mt-4">
+          <button 
+            @click="showForgotPassword = true"
+            type="button"
+            class="text-dinor-orange hover:text-dinor-brown text-sm transition-colors duration-200"
+          >
+            🔐 Mot de passe oublié ?
+          </button>
+        </div>
       </form>
 
       <!-- Formulaire d'inscription -->
@@ -161,6 +172,56 @@
         {{ errorMessage }}
       </div>
     </div>
+    
+    <!-- Modal Mot de passe oublié -->
+    <div v-if="showForgotPassword" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 rounded-2xl">
+      <div class="bg-dinor-cream border-2 border-dinor-olive rounded-xl p-6 max-w-sm w-full">
+        <h3 class="text-xl font-bold text-dinor-brown mb-4 text-center">🔐 Mot de passe oublié</h3>
+        
+        <form @submit.prevent="handleForgotPassword" v-if="!resetEmailSent">
+          <div class="mb-4">
+            <input
+              v-model="resetEmail"
+              type="email"
+              placeholder="Votre adresse email"
+              required
+              class="w-full p-3 border-2 border-dinor-olive rounded-lg focus:border-dinor-orange focus:outline-none bg-dinor-beige text-dinor-brown"
+            />
+          </div>
+          
+          <button
+            type="submit"
+            :disabled="loadingReset"
+            class="w-full bg-dinor-orange text-white py-3 rounded-lg font-bold hover:bg-dinor-orange-light transition-colors duration-300 disabled:opacity-50"
+          >
+            {{ loadingReset ? 'Envoi...' : '📧 Envoyer le lien' }}
+          </button>
+        </form>
+        
+        <!-- Message de confirmation -->
+        <div v-if="resetEmailSent" class="text-center">
+          <div class="text-4xl mb-4">📧</div>
+          <p class="text-dinor-brown mb-4">Email envoyé ! Vérifiez votre boîte de réception.</p>
+          <button
+            @click="closeForgotPassword"
+            class="text-dinor-orange hover:text-dinor-brown font-medium"
+          >
+            Fermer
+          </button>
+        </div>
+        
+        <!-- Boutons -->
+        <div class="flex justify-between mt-4" v-if="!resetEmailSent">
+          <button
+            @click="closeForgotPassword"
+            type="button"
+            class="text-dinor-brown hover:text-dinor-orange text-sm"
+          >
+            Annuler
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -180,6 +241,12 @@ const errorMessage = ref('')
 const recaptchaToken = ref('')
 const recaptchaElement = ref(null)
 const recaptchaWidgetId = ref(null)
+
+// Variables pour le reset de mot de passe
+const showForgotPassword = ref(false)
+const resetEmail = ref('')
+const loadingReset = ref(false)
+const resetEmailSent = ref(false)
 
 const loginForm = ref({
   email: '',
@@ -343,6 +410,34 @@ watch([() => props.show, activeTab], ([newShow, newTab]) => {
   }
 })
 
+// Fonctions pour le reset de mot de passe
+const handleForgotPassword = async () => {
+  try {
+    loadingReset.value = true
+    
+    const response = await $fetch('/api/reset-password', {
+      method: 'POST',
+      body: { email: resetEmail.value }
+    })
+    
+    if (response.success) {
+      resetEmailSent.value = true
+    }
+    
+  } catch (error) {
+    errorMessage.value = 'Erreur lors de l\'envoi de l\'email: ' + error.message
+  } finally {
+    loadingReset.value = false
+  }
+}
+
+const closeForgotPassword = () => {
+  showForgotPassword.value = false
+  resetEmail.value = ''
+  resetEmailSent.value = false
+  loadingReset.value = false
+}
+
 // Reset form when modal closes
 watch(() => props.show, (newVal) => {
   if (!newVal) {
@@ -350,6 +445,7 @@ watch(() => props.show, (newVal) => {
     recaptchaToken.value = ''
     loginForm.value = { email: '', password: '' }
     registerForm.value = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '' }
+    closeForgotPassword()
   }
 })
 </script>
