@@ -3,7 +3,7 @@ import { v2 as cloudinary } from 'cloudinary'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
-  const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey)
+  const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
   
   // Configuration Cloudinary
   cloudinary.config({

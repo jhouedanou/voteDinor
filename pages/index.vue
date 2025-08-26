@@ -1,5 +1,13 @@
 <template>
   <div class="min-h-screen bg-dinor-cream">
+    <!-- Header avec authentification -->
+    <header class="bg-dinor-brown shadow-lg">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-retro font-bold text-dinor-cream">DINOR</h1>
+        <AuthUserMenu @openLogin="showLoginModal = true" />
+      </div>
+    </header>
+
     <!-- Hero Section -->
     <section class="hero bg-gradient-dinor text-white py-20 px-4">
       <div class="max-w-4xl mx-auto text-center">
@@ -14,7 +22,7 @@
         </p>
         <div class="cta-buttons flex flex-col sm:flex-row gap-4 justify-center">
           <button 
-            @click="openRegistration" 
+            @click="handleParticipate" 
             class="btn-retro px-8 py-4 text-lg font-bold rounded-full bg-white text-dinor-orange hover:bg-dinor-beige transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
           >
             🎯 Participer
@@ -25,6 +33,12 @@
           >
             ❤️ Voter
           </button>
+          <nuxt-link 
+            to="/classements" 
+            class="btn-retro-secondary px-8 py-4 text-lg font-bold rounded-full border-2 border-white text-white hover:bg-white hover:text-dinor-orange transition-all duration-300 transform hover:scale-105 text-center"
+          >
+            🏆 Classements
+          </nuxt-link>
         </div>
       </div>
     </section>
@@ -132,14 +146,26 @@
               <p class="candidate-votes text-dinor-red-vintage font-semibold mb-3">
                 ❤️ {{ candidate.votes_count }} votes
               </p>
+              <!-- Si utilisateur non connecté -->
               <button 
-                v-if="!hasVotedToday(candidate.id)"
+                v-if="!user"
+                @click="showLoginModal = true" 
+                class="btn-vote w-full bg-dinor-beige text-dinor-brown py-2 rounded-full font-bold hover:bg-dinor-cream transition-all duration-300"
+              >
+                🔒 Se connecter pour voter
+              </button>
+              
+              <!-- Si utilisateur connecté mais n'a pas encore voté -->
+              <button 
+                v-else-if="!hasVotedToday(candidate.id)"
                 @click="vote(candidate.id)" 
                 :disabled="loading"
                 class="btn-vote w-full bg-gradient-dinor text-white py-2 rounded-full font-bold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
               >
                 {{ loading ? 'Vote...' : 'Voter' }}
               </button>
+              
+              <!-- Si déjà voté aujourd'hui -->
               <div v-else class="voted-today text-center py-2 text-dinor-olive font-semibold">
                 ✅ Voté aujourd'hui
               </div>
@@ -167,6 +193,13 @@
       </div>
     </footer>
 
+    <!-- Login Modal -->
+    <AuthLoginModal 
+      :show="showLoginModal" 
+      @close="showLoginModal = false"
+      @success="handleAuthSuccess" 
+    />
+
     <!-- Success/Error Toast -->
     <div v-if="toast.show" :class="toastClass" class="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm">
       <div class="flex items-center">
@@ -180,8 +213,12 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 
+// Composables Supabase
+const user = useSupabaseUser()
+
 // Reactive data
 const showRegistrationModal = ref(false)
+const showLoginModal = ref(false)
 const candidates = ref([])
 const loading = ref(false)
 const photoPreview = ref(null)
@@ -207,6 +244,18 @@ const toastClass = computed(() => ({
 }))
 
 // Methods
+const handleParticipate = () => {
+  if (!user.value) {
+    showLoginModal.value = true
+    return
+  }
+  showRegistrationModal.value = true
+}
+
+const handleAuthSuccess = (message) => {
+  showToast(message, 'success')
+}
+
 const openRegistration = () => {
   showRegistrationModal.value = true
 }
@@ -261,6 +310,13 @@ const submitRegistration = async () => {
 }
 
 const vote = async (candidateId) => {
+  // Vérifier si l'utilisateur est connecté
+  if (!user.value) {
+    showLoginModal.value = true
+    showToast('Vous devez être connecté pour voter', 'error')
+    return
+  }
+
   if (hasVotedToday(candidateId)) {
     showToast('Vous avez déjà voté pour ce candidat aujourd\'hui !', 'error')
     return
@@ -292,26 +348,60 @@ const hasVotedToday = (candidateId) => {
 
 const loadCandidates = async () => {
   try {
-    // TODO: Load from Firebase
-    // Mock data for now
+    // Charger depuis l'API
+    const response = await $fetch('/api/candidates')
+    candidates.value = response || []
+    
+    // Si aucun candidat, afficher des données de test
+    if (candidates.value.length === 0) {
+      candidates.value = [
+        {
+          id: '1',
+          nom: 'Kouassi',
+          prenom: 'Adjoua',
+          photo_url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
+          votes_count: 42,
+          status: 'approved'
+        },
+        {
+          id: '2',
+          nom: 'Traore',
+          prenom: 'Mamadou',
+          photo_url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
+          votes_count: 35,
+          status: 'approved'
+        },
+        {
+          id: '3',
+          nom: 'Diallo',
+          prenom: 'Fatou',
+          photo_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop',
+          votes_count: 28,
+          status: 'approved'
+        }
+      ]
+    }
+  } catch (error) {
+    console.error('Erreur chargement candidats:', error)
+    // Afficher des données de test en cas d'erreur
     candidates.value = [
       {
         id: '1',
         nom: 'Kouassi',
         prenom: 'Adjoua',
         photo_url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
-        votes_count: 42
+        votes_count: 42,
+        status: 'approved'
       },
       {
         id: '2',
         nom: 'Traore',
         prenom: 'Mamadou',
         photo_url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
-        votes_count: 35
+        votes_count: 35,
+        status: 'approved'
       }
     ]
-  } catch (error) {
-    console.error('Erreur chargement candidats:', error)
   }
 }
 

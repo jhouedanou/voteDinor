@@ -15,7 +15,9 @@
     "vercel-build": "nuxt build"
   },
   "dependencies": {
+    "@nuxtjs/supabase": "^1.6.1",
     "@supabase/supabase-js": "^2.56.0",
+    "@vueuse/nuxt": "^13.7.0",
     "cloudinary": "^2.7.0",
     "firebase": "^12.1.0",
     "nuxt": "^4.0.3",
