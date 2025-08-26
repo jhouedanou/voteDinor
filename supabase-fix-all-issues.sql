@@ -5,11 +5,14 @@ DROP TRIGGER IF EXISTS update_votes_count_on_insert ON votes;
 DROP TRIGGER IF EXISTS update_votes_count_on_delete ON votes;
 DROP TRIGGER IF EXISTS update_votes_updated_at ON votes;
 
--- 2. Supprimer les fonctions qui causent des problèmes avec updated_at
+-- 2. Supprimer le trigger sur candidates qui dépend de la fonction
+DROP TRIGGER IF EXISTS update_candidates_updated_at ON candidates;
+
+-- 3. Supprimer les fonctions qui causent des problèmes avec updated_at
 DROP FUNCTION IF EXISTS update_candidate_votes_count();
 DROP FUNCTION IF EXISTS update_updated_at_column();
 
--- 3. Ajouter la colonne description à candidates si elle n'existe pas
+-- 4. Ajouter la colonne description à candidates si elle n'existe pas
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -23,7 +26,7 @@ BEGIN
     END IF;
 END $$;
 
--- 4. Ajouter la colonne email à candidates si elle n'existe pas
+-- 5. Ajouter la colonne email à candidates si elle n'existe pas
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -37,7 +40,7 @@ BEGIN
     END IF;
 END $$;
 
--- 5. Créer une fonction simple pour mettre à jour updated_at uniquement sur candidates
+-- 6. Créer une fonction simple pour mettre à jour updated_at uniquement sur candidates
 CREATE OR REPLACE FUNCTION update_candidates_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -46,13 +49,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 6. Créer le trigger pour candidates uniquement
+-- 7. Créer le trigger pour candidates uniquement
 DROP TRIGGER IF EXISTS update_candidates_updated_at ON candidates;
 CREATE TRIGGER update_candidates_updated_at 
     BEFORE UPDATE ON candidates 
     FOR EACH ROW EXECUTE PROCEDURE update_candidates_updated_at();
 
--- 7. Vérifier la structure finale
+-- 8. Vérifier la structure finale
 SELECT 'Structure de la table candidates:' as info;
 SELECT column_name, data_type, is_nullable 
 FROM information_schema.columns 

@@ -198,6 +198,29 @@
       <div class="max-w-4xl mx-auto text-center">
         <h3 class="text-2xl font-retro font-bold mb-2">DINOR - Cuisine Vintage</h3>
         <p class="text-dinor-beige">Classements mis à jour en temps réel</p>
+        
+        <!-- Legal Links -->
+        <div class="mt-6 flex flex-wrap justify-center gap-4 text-sm">
+          <nuxt-link 
+            to="/privacy-policy" 
+            class="text-dinor-beige hover:text-dinor-orange transition-colors duration-200"
+          >
+            🔒 Politique de Confidentialité
+          </nuxt-link>
+          <nuxt-link 
+            to="/terms-of-service" 
+            class="text-dinor-beige hover:text-dinor-orange transition-colors duration-200"
+          >
+            📜 Conditions Générales
+          </nuxt-link>
+          <nuxt-link 
+            to="/delete-account" 
+            class="text-dinor-beige hover:text-red-400 transition-colors duration-200"
+          >
+            🗑️ Supprimer mon compte
+          </nuxt-link>
+        </div>
+        
         <div class="mt-4 text-sm text-dinor-beige">
           © 2025 Concours Photo DINOR - Flashback Gourmand
         </div>

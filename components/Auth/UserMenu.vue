@@ -53,6 +53,13 @@
               👤 Mon Profil
             </nuxt-link>
             <hr class="my-2 border-dinor-beige">
+            <nuxt-link 
+              to="/delete-account" 
+              class="block px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200"
+              @click="closeDropdown"
+            >
+              🗑️ Supprimer mon compte
+            </nuxt-link>
             <button 
               @click="handleLogout"
               class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200"
