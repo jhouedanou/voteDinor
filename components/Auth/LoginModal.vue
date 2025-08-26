@@ -278,6 +278,21 @@ const signUpWithEmail = async () => {
     
     if (error) throw error
     
+    // Envoyer email de bienvenue
+    try {
+      await $fetch('/api/send-email', {
+        method: 'POST',
+        body: {
+          type: 'account_creation',
+          email: registerForm.value.email,
+          name: `${registerForm.value.firstName} ${registerForm.value.lastName}`
+        }
+      })
+    } catch (emailError) {
+      console.error('Erreur envoi email:', emailError)
+      // Ne pas bloquer l'inscription si l'email échoue
+    }
+    
     emit('success', 'Inscription réussie ! Vous pouvez maintenant vous connecter.')
     emit('close')
     

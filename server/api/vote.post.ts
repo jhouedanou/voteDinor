@@ -28,7 +28,10 @@ export default defineEventHandler(async (event) => {
     }
     
     // Get client IP
-    const ip_address = getClientIP(event) || '127.0.0.1'
+    const ip_address = getHeader(event, 'x-forwarded-for') || 
+                      getHeader(event, 'x-real-ip') || 
+                      event.node.req.socket.remoteAddress || 
+                      '127.0.0.1'
     const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
     
     // Vérifier si l'utilisateur a déjà voté pour ce candidat aujourd'hui

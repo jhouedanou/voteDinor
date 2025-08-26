@@ -1,23 +1,52 @@
 # 🎯 Flashback Gourmand - Concours Photo Rétro DINOR
 
-Landing page pour le concours photo vintage DINOR avec design années 60, inscription des candidats et système de vote sécurisé.
+Plateforme complète de concours photo vintage DINOR avec système d'authentification, vote sécurisé, classements et administration.
 
 ## 🚀 Fonctionnalités
 
 - **Design Vintage** : Palette couleurs DINOR des années 50-60
-- **Inscription Candidats** : Formulaire avec upload photo
-- **Vote Sécurisé** : 1 vote par candidat par jour avec reCAPTCHA v3
-- **Temps Réel** : Compteurs de votes mis à jour instantanément
+- **Authentification** : Inscription/connexion par email + Google OAuth
+- **Inscription Candidats** : Formulaire avec upload photo et validation
+- **Vote Sécurisé** : Système de vote authentifié avec protection anti-spam
+- **Classements** : Page dédiée avec podium et statistiques
+- **Administration** : Dashboard admin pour gérer candidats et votes
+- **Partage Social** : Boutons WhatsApp, Facebook, X, Instagram
+- **Page Merci** : Confirmation d'inscription avec prochaines étapes
+- **Emails** : Notifications automatiques via HeroTofu
 - **Responsive** : Compatible mobile et desktop
 
 ## 🛠 Stack Technologique
 
-- **Frontend** : Nuxt 3 + Vue 3 + Tailwind CSS
-- **Backend** : API Routes Nuxt.js
-- **Base de données** : Firebase Firestore
-- **Storage** : Firebase Storage
-- **Sécurité** : Google reCAPTCHA v3
-- **Hébergement** : Vercel/Netlify
+### Frontend
+- **Framework** : [Nuxt 3](https://nuxt.com/) + Vue 3 Composition API
+- **Styling** : [Tailwind CSS](https://tailwindcss.com/) avec palette DINOR personnalisée
+- **Components** : Vue 3 avec TypeScript
+- **Icons** : SVG intégrés + Heroicons
+
+### Backend & Base de données  
+- **API** : Nuxt Server API Routes (Nitro)
+- **Base de données** : [Supabase](https://supabase.com/) PostgreSQL
+- **Authentification** : Supabase Auth (Email + Google OAuth)
+- **Row Level Security** : Politiques RLS Supabase
+- **Storage** : Cloudinary (recommandé) ou Supabase Storage
+
+### Sécurité & Validation
+- **Anti-spam** : Google reCAPTCHA v2
+- **Rate Limiting** : 1 vote par candidat par jour par utilisateur/IP
+- **Authentification** : JWT tokens Supabase
+- **Protection CSRF** : Tokens de session
+- **Validation** : Numéros de téléphone avec format international
+
+### Emails & Notifications
+- **Service Email** : [HeroTofu](https://herotofu.com/) 
+- **Types** : Confirmation création compte, notification inscription candidat
+- **Templates** : HTML responsive avec design DINOR
+
+### Hébergement & Déploiement
+- **Hosting** : [Vercel](https://vercel.com/) Edge Runtime
+- **CDN** : Vercel Edge Network
+- **SSL** : Automatique Vercel
+- **Domaine** : Configuration domaine personnalisé
 
 ## ⚡ Installation
 

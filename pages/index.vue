@@ -165,10 +165,10 @@
               <button 
                 v-else-if="!hasVotedToday(candidate.id)"
                 @click="vote(candidate.id)" 
-                :disabled="loading"
+                :disabled="loadingVotes.has(candidate.id)"
                 class="btn-vote w-full bg-gradient-dinor text-white py-2 rounded-full font-bold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
               >
-                {{ loading ? 'Vote...' : 'Voter' }}
+                {{ loadingVotes.has(candidate.id) ? 'Vote...' : 'Voter' }}
               </button>
               
               <!-- Si déjà voté aujourd'hui -->
@@ -227,6 +227,7 @@ const showRegistrationModal = ref(false)
 const showLoginModal = ref(false)
 const candidates = ref([])
 const loading = ref(false)
+const loadingVotes = ref(new Set()) // Pour tracker les votes en cours par candidat
 const photoPreview = ref(null)
 const userVotesToday = ref(new Set())
 
@@ -305,9 +306,24 @@ const submitRegistration = async () => {
       return
     }
 
-    // TODO: Implement photo upload and form submission
-    showToast('Inscription réussie ! Votre candidature sera validée sous 24h.', 'success')
+    // Envoyer email de notification d'inscription candidat
+    try {
+      await $fetch('/api/send-email', {
+        method: 'POST',
+        body: {
+          type: 'candidate_registration',
+          email: 'admin@dinor.ci', // Email admin pour notification
+          candidateName: `${form.value.prenom} ${form.value.nom}`
+        }
+      })
+    } catch (emailError) {
+      console.error('Erreur envoi email admin:', emailError)
+    }
+    
+    // Rediriger vers la page de remerciement
+    showToast('Inscription soumise avec succès !', 'success')
     closeModal()
+    await navigateTo('/merci')
   } catch (error) {
     showToast('Erreur lors de l\'inscription: ' + error.message, 'error')
   } finally {
@@ -329,9 +345,11 @@ const vote = async (candidateId) => {
   }
 
   try {
-    loading.value = true
+    // Marquer ce candidat comme en cours de vote
+    loadingVotes.value.add(candidateId)
     
     // Appeler l'API de vote avec l'auth token
+    const supabase = useSupabaseClient()
     const { data: session } = await supabase.auth.getSession()
     
     const response = await $fetch('/api/vote', {
@@ -359,7 +377,8 @@ const vote = async (candidateId) => {
   } catch (error) {
     showToast('Erreur lors du vote: ' + (error.data?.message || error.message), 'error')
   } finally {
-    loading.value = false
+    // Retirer ce candidat du loading
+    loadingVotes.value.delete(candidateId)
   }
 }
 

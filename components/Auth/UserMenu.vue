@@ -8,8 +8,9 @@
       
       <div class="relative">
         <button 
-          @click="showDropdown = !showDropdown"
+          @click="toggleDropdown"
           class="w-10 h-10 bg-dinor-beige rounded-full flex items-center justify-center hover:bg-dinor-cream transition-colors duration-300"
+          title="Cliquer pour voir le menu"
         >
           <img 
             v-if="user.user_metadata?.avatar_url" 
@@ -25,14 +26,14 @@
         <!-- Dropdown Menu -->
         <div 
           v-if="showDropdown" 
-          v-click-outside="() => showDropdown = false"
+          @click.stop
           class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border-2 border-dinor-olive z-50"
         >
           <div class="py-2">
             <nuxt-link 
               to="/classements" 
               class="block px-4 py-2 text-dinor-brown hover:bg-dinor-beige transition-colors duration-200"
-              @click="showDropdown = false"
+              @click="closeDropdown"
             >
               🏆 Classements
             </nuxt-link>
@@ -40,14 +41,14 @@
               v-if="isAdmin"
               to="/admin/dashboard" 
               class="block px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200 font-semibold"
-              @click="showDropdown = false"
+              @click="closeDropdown"
             >
               ⚙️ Administration
             </nuxt-link>
             <nuxt-link 
               to="/profile" 
               class="block px-4 py-2 text-dinor-brown hover:bg-dinor-beige transition-colors duration-200"
-              @click="showDropdown = false"
+              @click="closeDropdown"
             >
               👤 Mon Profil
             </nuxt-link>
@@ -90,6 +91,17 @@ const user = useSupabaseUser()
 const showDropdown = ref(false)
 const isAdmin = ref(false)
 
+// Toggle dropdown
+const toggleDropdown = () => {
+  console.log('Toggling dropdown:', showDropdown.value)
+  showDropdown.value = !showDropdown.value
+}
+
+// Close dropdown when clicking outside
+const closeDropdown = () => {
+  showDropdown.value = false
+}
+
 // Vérifier si l'utilisateur est admin
 watch(user, async (newUser) => {
   if (newUser) {
@@ -121,6 +133,15 @@ const handleLogout = async () => {
     console.error('Erreur lors de la déconnexion:', error)
   }
 }
+
+// Click outside to close dropdown
+onMounted(() => {
+  document.addEventListener('click', (e) => {
+    if (showDropdown.value) {
+      closeDropdown()
+    }
+  })
+})
 
 // Directive personnalisée pour fermer le dropdown en cliquant à l'extérieur
 const vClickOutside = {
