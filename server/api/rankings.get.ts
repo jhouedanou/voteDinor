@@ -35,20 +35,12 @@ export default defineEventHandler(async (event) => {
     
     const activeVoters = new Set(uniqueVoters?.map(v => v.ip_address)).size || 0
 
-    // Données de test si pas de données réelles
-    const mockStats = {
-      totalCandidates: 5,
-      totalVotes: 389,
-      todayVotes: 23,
-      activeVoters: 156
-    }
-
-    const stats = totalCandidates > 0 ? {
+    const stats = {
       totalCandidates,
       totalVotes,
       todayVotes: todayVotes || 0,
       activeVoters
-    } : mockStats
+    }
 
     return {
       success: true,
