@@ -281,7 +281,7 @@ const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: `${useRuntimeConfig().public.siteUrl || window.location.origin}/auth/callback`
       }
     })
     
@@ -303,7 +303,7 @@ const signInWithFacebook = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'facebook',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: `${useRuntimeConfig().public.siteUrl || window.location.origin}/auth/callback`
       }
     })
     
