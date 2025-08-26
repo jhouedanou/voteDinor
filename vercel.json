@@ -4,10 +4,5 @@
   "outputDirectory": ".output",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
-  "regions": ["cdg1"],
-  "functions": {
-    "app/server/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  "regions": ["cdg1"]
 }
