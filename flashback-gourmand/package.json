@@ -1,13 +1,18 @@
 {
-  "name": "nuxt-app",
+  "name": "flashback-gourmand",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "vercel-build": "nuxt build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.56.0",

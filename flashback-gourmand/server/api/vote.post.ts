@@ -1,8 +1,11 @@
 import { supabase } from '~/plugins/supabase.client'
 
-// reCAPTCHA verification function
-async function verifyRecaptcha(token: string) {
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY
+export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
+  
+  // reCAPTCHA verification function
+  async function verifyRecaptcha(token: string) {
+    const secretKey = config.recaptchaSecretKey
   if (!secretKey) {
     throw new Error('reCAPTCHA secret key not configured')
   }
@@ -17,7 +20,23 @@ async function verifyRecaptcha(token: string) {
   return data.success && data.score > 0.5
 }
 
-export default defineEventHandler(async (event) => {
+  // reCAPTCHA verification function
+  async function verifyRecaptcha(token: string) {
+    const secretKey = config.recaptchaSecretKey
+    if (!secretKey) {
+      throw new Error('reCAPTCHA secret key not configured')
+    }
+    
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `secret=${secretKey}&response=${token}`
+    })
+    
+    const data = await response.json()
+    return data.success && data.score > 0.5
+  }
+
   try {
     const body = await readBody(event)
     const { candidate_id, recaptcha_token } = body

@@ -1,16 +1,19 @@
 import { supabase } from '~/plugins/supabase.client'
 import { v2 as cloudinary } from 'cloudinary'
 
-// Configuration Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
+export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
+  
+  // Configuration Cloudinary
+  cloudinary.config({
+    cloud_name: config.cloudinaryCloudName,
+    api_key: config.cloudinaryApiKey,
+    api_secret: config.cloudinaryApiSecret
+  })
 
-// reCAPTCHA verification function
-async function verifyRecaptcha(token: string) {
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY
+  // reCAPTCHA verification function
+  async function verifyRecaptcha(token: string) {
+    const secretKey = config.recaptchaSecretKey
   if (!secretKey) {
     throw new Error('reCAPTCHA secret key not configured')
   }
@@ -25,7 +28,23 @@ async function verifyRecaptcha(token: string) {
   return data.success && data.score > 0.5
 }
 
-export default defineEventHandler(async (event) => {
+  // reCAPTCHA verification function
+  async function verifyRecaptcha(token: string) {
+    const secretKey = config.recaptchaSecretKey
+    if (!secretKey) {
+      throw new Error('reCAPTCHA secret key not configured')
+    }
+    
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `secret=${secretKey}&response=${token}`
+    })
+    
+    const data = await response.json()
+    return data.success && data.score > 0.5
+  }
+
   try {
     const body = await readBody(event)
     const { nom, prenom, whatsapp, photo_data, recaptcha_token } = body

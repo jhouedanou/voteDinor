@@ -1,4 +1,6 @@
 export const useRecaptcha = () => {
+  const config = useRuntimeConfig()
+  
   const loadRecaptcha = () => {
     return new Promise<void>((resolve) => {
       if (typeof window !== 'undefined') {
@@ -8,7 +10,7 @@ export const useRecaptcha = () => {
         }
         
         const script = document.createElement('script')
-        script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.RECAPTCHA_SITE_KEY}`
+        script.src = `https://www.google.com/recaptcha/api.js?render=${config.public.recaptchaSiteKey}`
         script.onload = () => resolve()
         document.head.appendChild(script)
       }
@@ -21,7 +23,7 @@ export const useRecaptcha = () => {
     return new Promise((resolve) => {
       if (typeof window !== 'undefined' && window.grecaptcha) {
         window.grecaptcha.ready(() => {
-          window.grecaptcha.execute(process.env.RECAPTCHA_SITE_KEY, { action })
+          window.grecaptcha.execute(config.public.recaptchaSiteKey, { action })
             .then((token: string) => resolve(token))
         })
       }
