@@ -308,9 +308,7 @@ const adminStats = ref({
 })
 
 const votes = ref([])
-const pendingCandidates = ref([])
 const recentVotes = ref([])
-const allCandidates = ref([])
 
 const pagination = ref({
   page: 1,
