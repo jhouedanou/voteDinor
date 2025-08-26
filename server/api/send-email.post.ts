@@ -3,6 +3,21 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const { type, email, name, candidateName } = body
     
+    // Validation des données
+    if (!email || !type) {
+      throw new Error('Email et type sont requis')
+    }
+    
+    // Option pour désactiver temporairement l'envoi d'email
+    const disableEmail = process.env.DISABLE_EMAIL === 'true'
+    if (disableEmail) {
+      console.log('Envoi d\'email désactivé, simulation réussie')
+      return {
+        success: true,
+        message: 'Email simulé (service désactivé)'
+      }
+    }
+    
     const heroToFuEndpoint = 'https://public.herotofu.com/v1/5a33db80-8283-11f0-b600-1fdb6134186f'
     
     let subject = ''
@@ -70,20 +85,46 @@ export default defineEventHandler(async (event) => {
     }
     
     // Envoyer l'email via HeroTofu
-    const response = await fetch(heroToFuEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        to: email,
-        subject: subject,
-        message: message
-      })
-    })
+    const emailData = {
+      to: email,
+      subject: subject,
+      message: message
+    }
     
-    if (!response.ok) {
-      throw new Error(`HeroTofu error: ${response.statusText}`)
+    console.log('Envoi email HeroTofu:', { type, email, subject })
+    
+    try {
+      const response = await fetch(heroToFuEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(emailData)
+      })
+      
+      const responseText = await response.text()
+      console.log('Réponse HeroTofu:', response.status, responseText)
+      
+      if (!response.ok) {
+        // Log détaillé pour diagnostiquer
+        console.error('Erreur HeroTofu détaillée:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText,
+          emailData
+        })
+        
+        // Si c'est une erreur 422, c'est probablement un problème de format
+        if (response.status === 422) {
+          throw new Error(`Format d'email invalide pour HeroTofu: ${responseText}`)
+        }
+        
+        throw new Error(`HeroTofu error: ${response.status} ${response.statusText} - ${responseText}`)
+      }
+    } catch (fetchError: any) {
+      console.error('Erreur fetch HeroTofu:', fetchError)
+      throw new Error(`Erreur réseau HeroTofu: ${fetchError.message || 'Erreur inconnue'}`)
     }
     
     return {
@@ -91,10 +132,10 @@ export default defineEventHandler(async (event) => {
       message: 'Email envoyé avec succès'
     }
     
-  } catch (error) {
+  } catch (error: any) {
     throw createError({
       statusCode: 500,
-      statusMessage: `Erreur envoi email: ${error.message}`
+      statusMessage: `Erreur envoi email: ${error.message || 'Erreur inconnue'}`
     })
   }
 })
