@@ -78,22 +78,24 @@
     <div v-else class="flex gap-2">
       <button 
         @click="$emit('openLogin')"
-        class="bg-dinor-beige text-dinor-brown px-4 py-2 rounded-full font-semibold hover:bg-dinor-cream transition-all duration-300"
+        class="bg-dinor-beige text-dinor-brown px-4 py-2 font-semibold hover:bg-dinor-cream transition-all duration-300"
+        style="border-radius: 6px;"
       >
-        Se connecter
+        🗳️ Voter
       </button>
       <button 
-        @click="$emit('openLogin')"
-        class="bg-dinor-orange text-white px-4 py-2 rounded-full font-semibold hover:bg-dinor-orange-light transition-all duration-300"
+        @click="$emit('openCandidateLogin')"
+        class="bg-dinor-orange text-white px-4 py-2 font-semibold hover:bg-dinor-orange-light transition-all duration-300"
+        style="border-radius: 6px;"
       >
-        S'inscrire
+        📸 Candidat
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-const emit = defineEmits(['openLogin'])
+const emit = defineEmits(['openLogin', 'openCandidateLogin'])
 
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()

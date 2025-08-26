@@ -6,7 +6,7 @@
         <div class="flex items-center gap-4">
           <h1 class="text-2xl font-retro font-bold text-dinor-cream">DINOR</h1>
         </div>
-        <AuthUserMenu @openLogin="showLoginModal = true" />
+        <AuthUserMenu @openLogin="showVoterLogin = true" @openCandidateLogin="showCandidateLogin = true" />
       </div>
     </header>
 
@@ -28,8 +28,9 @@
             @click="handleParticipate" 
             :disabled="isUserCandidate"
             :class="isUserCandidate ? 
-              'btn-retro px-8 py-4 text-lg font-bold rounded-full bg-gray-400 text-gray-600 cursor-not-allowed opacity-60' :
-              'btn-retro px-8 py-4 text-lg font-bold rounded-full bg-white text-dinor-orange hover:bg-dinor-beige transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl'"
+              'px-8 py-4 text-lg font-bold bg-gray-400 text-gray-600 cursor-not-allowed opacity-60' :
+              'px-8 py-4 text-lg font-bold bg-white text-dinor-orange hover:bg-dinor-beige transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl'"
+            style="border-radius: 8px;"
           >
             {{ isUserCandidate ? '✅ Déjà candidat' : '🎯 Participer' }}
           </button>
@@ -39,14 +40,16 @@
             @click="scrollToGallery" 
             :disabled="isUserCandidate"
             :class="isUserCandidate ? 
-              'btn-retro-secondary px-8 py-4 text-lg font-bold rounded-full border-2 border-gray-400 text-gray-400 cursor-not-allowed opacity-60' :
-              'btn-retro-secondary px-8 py-4 text-lg font-bold rounded-full border-2 border-white text-white hover:bg-white hover:text-dinor-orange transition-all duration-300 transform hover:scale-105'"
+              'px-8 py-4 text-lg font-bold border-2 border-gray-400 text-gray-400 cursor-not-allowed opacity-60' :
+              'px-8 py-4 text-lg font-bold border-2 border-white text-white hover:bg-white hover:text-dinor-orange transition-all duration-300 transform hover:scale-105'"
+            style="border-radius: 8px;"
           >
             {{ isUserCandidate ? '🚫 Interdit' : '❤️ Voter' }}
           </button>
           <nuxt-link 
             to="/classements" 
-            class="btn-retro-secondary px-8 py-4 text-lg font-bold rounded-full border-2 border-white text-white hover:bg-white hover:text-dinor-orange transition-all duration-300 transform hover:scale-105 text-center"
+            class="px-8 py-4 text-lg font-bold border-2 border-white text-white hover:bg-white hover:text-dinor-orange transition-all duration-300 transform hover:scale-105 text-center"
+            style="border-radius: 8px;"
           >
             🏆 Classements
           </nuxt-link>
@@ -56,7 +59,7 @@
 
     <!-- Registration Modal -->
     <div v-if="showRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="card-retro bg-dinor-cream border-2 border-dinor-red-vintage rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="card-retro bg-dinor-cream border-2 border-dinor-red-vintage p-8 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl" style="border-radius: 12px;">
         <form @submit.prevent="submitRegistration" class="registration-form">
           <h3 class="text-2xl font-retro font-bold mb-6 text-dinor-brown text-center">Inscription Candidat</h3>
           
@@ -127,14 +130,16 @@
             <button 
               type="submit" 
               :disabled="loading"
-              class="btn-retro flex-1 bg-gradient-dinor text-white py-3 rounded-full font-bold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+              class="btn-retro flex-1 bg-gradient-dinor text-white py-3 font-bold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+              style="border-radius: 8px;"
             >
               {{ loading ? 'Inscription...' : "S'inscrire" }}
             </button>
             <button 
               @click="closeModal" 
               type="button" 
-              class="btn-cancel flex-1 bg-dinor-brown text-white py-3 rounded-full font-bold hover:bg-dinor-brown-dark transition-all duration-300"
+              class="btn-cancel flex-1 bg-dinor-brown text-white py-3 font-bold hover:bg-dinor-brown-dark transition-all duration-300"
+              style="border-radius: 8px;"
             >
               Annuler
             </button>
@@ -157,7 +162,8 @@
           <div 
             v-for="candidate in candidates" 
             :key="candidate.id"
-            class="candidate-card card-retro bg-white border-2 border-dinor-red-vintage rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            class="candidate-card card-retro bg-white border-2 border-dinor-red-vintage overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            style="border-radius: 8px;"
           >
             <img 
               :src="candidate.photo_url" 
@@ -180,8 +186,9 @@
               <!-- Si utilisateur non connecté -->
               <button 
                 v-if="!user"
-                @click="showLoginModal = true" 
-                class="btn-vote w-full bg-dinor-beige text-dinor-brown py-2 rounded-full font-bold hover:bg-dinor-cream transition-all duration-300"
+                @click="showVoterLogin = true" 
+                class="w-full bg-dinor-beige text-dinor-brown py-2 font-bold hover:bg-dinor-cream transition-all duration-300"
+                style="border-radius: 6px;"
               >
                 🔒 Se connecter pour voter
               </button>
@@ -196,7 +203,8 @@
                 v-else-if="!hasVotedToday(candidate.id)"
                 @click="vote(candidate.id)" 
                 :disabled="loadingVotes.has(candidate.id)"
-                class="btn-vote w-full bg-gradient-dinor text-white py-2 rounded-full font-bold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                class="w-full bg-gradient-dinor text-white py-2 font-bold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                style="border-radius: 6px;"
               >
                 {{ loadingVotes.has(candidate.id) ? 'Vote...' : 'Voter' }}
               </button>
@@ -252,10 +260,17 @@
       </div>
     </footer>
 
-    <!-- Login Modal -->
-    <AuthLoginModal 
-      :show="showLoginModal" 
-      @close="showLoginModal = false"
+    <!-- Candidate Login Modal -->
+    <AuthCandidateLoginModal 
+      :show="showCandidateLogin" 
+      @close="showCandidateLogin = false"
+      @success="handleAuthSuccess" 
+    />
+
+    <!-- Voter Login Modal -->
+    <AuthVoterLoginModal 
+      :show="showVoterLogin" 
+      @close="showVoterLogin = false"
       @success="handleAuthSuccess" 
     />
 
@@ -280,7 +295,8 @@ const user = useSupabaseUser()
 
 // Reactive data
 const showRegistrationModal = ref(false)
-const showLoginModal = ref(false)
+const showCandidateLogin = ref(false)
+const showVoterLogin = ref(false)
 const candidates = ref([])
 const loading = ref(false)
 const loadingVotes = ref(new Set()) // Pour tracker les votes en cours par candidat
@@ -309,7 +325,7 @@ const toastClass = computed(() => ({
 // Methods
 const handleParticipate = () => {
   if (!user.value) {
-    showLoginModal.value = true
+    showCandidateLogin.value = true
     return
   }
   
@@ -459,7 +475,7 @@ const submitRegistration = async () => {
 const vote = async (candidateId) => {
   // Vérifier si l'utilisateur est connecté
   if (!user.value) {
-    showLoginModal.value = true
+    showVoterLogin.value = true
     showToast('Vous devez être connecté pour voter', 'error')
     return
   }
