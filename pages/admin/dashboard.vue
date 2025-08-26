@@ -297,6 +297,8 @@ const activeTab = ref('overview')
 const showLoginModal = ref(false)
 const loading = ref(false)
 const currentPage = ref(1)
+const pendingCandidates = ref([])
+const allCandidates = ref([])
 
 const adminStats = ref({
   totalCandidates: 0,
@@ -359,6 +361,37 @@ const loadAdminStats = async () => {
   }
 }
 
+const loadPendingCandidates = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('candidates')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    
+    pendingCandidates.value = data || []
+  } catch (error) {
+    console.error('Erreur chargement candidats en attente:', error)
+  }
+}
+
+const loadAllCandidates = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('candidates')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    
+    allCandidates.value = data || []
+  } catch (error) {
+    console.error('Erreur chargement tous les candidats:', error)
+  }
+}
+
 const loadVotes = async () => {
   try {
     loading.value = true
@@ -407,13 +440,93 @@ const applyFilters = () => {
 }
 
 const approveCandidate = async (candidateId) => {
-  // Implémenter l'approbation
-  console.log('Approuver candidat:', candidateId)
+  try {
+    // Trouver le candidat
+    const candidate = pendingCandidates.value.find(c => c.id === candidateId)
+    if (!candidate) {
+      throw new Error('Candidat non trouvé')
+    }
+    
+    // Mettre à jour le statut dans Supabase
+    const { error } = await supabase
+      .from('candidates')
+      .update({ status: 'approved' })
+      .eq('id', candidateId)
+    
+    if (error) throw error
+    
+    // Envoyer notification d'approbation
+    try {
+      await $fetch('/api/notify-approval', {
+        method: 'POST',
+        body: {
+          candidateId: candidateId,
+          candidateName: `${candidate.prenom} ${candidate.nom}`,
+          candidateEmail: candidate.email,
+          action: 'approved'
+        }
+      })
+    } catch (emailError) {
+      console.error('Erreur notification d\'approbation:', emailError)
+      // Ne pas bloquer l'approbation si l'email échoue
+    }
+    
+    // Recharger les données
+    await loadAdminStats()
+    await loadPendingCandidates()
+    
+    // Message de succès
+    alert(`Candidat ${candidate.prenom} ${candidate.nom} approuvé avec succès !`)
+    
+  } catch (error) {
+    console.error('Erreur approbation candidat:', error)
+    alert('Erreur lors de l\'approbation: ' + error.message)
+  }
 }
 
 const rejectCandidate = async (candidateId) => {
-  // Implémenter le rejet
-  console.log('Rejeter candidat:', candidateId)
+  try {
+    // Trouver le candidat
+    const candidate = pendingCandidates.value.find(c => c.id === candidateId)
+    if (!candidate) {
+      throw new Error('Candidat non trouvé')
+    }
+    
+    // Mettre à jour le statut dans Supabase
+    const { error } = await supabase
+      .from('candidates')
+      .update({ status: 'rejected' })
+      .eq('id', candidateId)
+    
+    if (error) throw error
+    
+    // Envoyer notification de rejet
+    try {
+      await $fetch('/api/notify-approval', {
+        method: 'POST',
+        body: {
+          candidateId: candidateId,
+          candidateName: `${candidate.prenom} ${candidate.nom}`,
+          candidateEmail: candidate.email,
+          action: 'rejected'
+        }
+      })
+    } catch (emailError) {
+      console.error('Erreur notification de rejet:', emailError)
+      // Ne pas bloquer le rejet si l'email échoue
+    }
+    
+    // Recharger les données
+    await loadAdminStats()
+    await loadPendingCandidates()
+    
+    // Message de succès
+    alert(`Candidat ${candidate.prenom} ${candidate.nom} rejeté.`)
+    
+  } catch (error) {
+    console.error('Erreur rejet candidat:', error)
+    alert('Erreur lors du rejet: ' + error.message)
+  }
 }
 
 const deleteVote = async (voteId) => {
@@ -427,6 +540,8 @@ const deleteVote = async (voteId) => {
 onMounted(() => {
   loadAdminStats()
   loadVotes()
+  loadPendingCandidates()
+  loadAllCandidates()
 })
 
 // SEO
