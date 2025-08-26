@@ -5,18 +5,6 @@
       <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
         <div class="flex items-center gap-4">
           <h1 class="text-2xl font-retro font-bold text-dinor-cream">DINOR</h1>
-          <!-- Bouton déconnexion visible pour utilisateurs connectés -->
-          <button 
-            v-if="user" 
-            @click="handleLogout"
-            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full text-sm font-medium transition-colors duration-200 flex items-center gap-1"
-            title="Se déconnecter"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-            </svg>
-            Déconnexion
-          </button>
         </div>
         <AuthUserMenu @openLogin="showLoginModal = true" />
       </div>
@@ -288,17 +276,7 @@ import { ref, onMounted, computed } from 'vue'
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
-// Fonction de déconnexion
-const handleLogout = async () => {
-  try {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    await navigateTo('/')
-    showToast('Déconnexion réussie', 'success')
-  } catch (error) {
-    showToast('Erreur lors de la déconnexion: ' + error.message, 'error')
-  }
-}
+
 
 // Reactive data
 const showRegistrationModal = ref(false)

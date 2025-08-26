@@ -8,9 +8,10 @@
       
       <div class="relative">
         <button 
-          @click="toggleDropdown"
+          @mouseenter="showDropdown = true"
+          @mouseleave="hideDropdown"
           class="w-10 h-10 bg-dinor-beige rounded-full flex items-center justify-center hover:bg-dinor-cream transition-colors duration-300"
-          title="Cliquer pour voir le menu"
+          title="Survoler pour voir le menu"
         >
           <img 
             v-if="user.user_metadata?.avatar_url" 
@@ -26,6 +27,8 @@
         <!-- Dropdown Menu -->
         <div 
           v-if="showDropdown" 
+          @mouseenter="showDropdown = true"
+          @mouseleave="hideDropdown"
           @click.stop
           class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border-2 border-dinor-olive z-50"
         >
@@ -98,10 +101,9 @@ const user = useSupabaseUser()
 const showDropdown = ref(false)
 const isAdmin = ref(false)
 
-// Toggle dropdown
-const toggleDropdown = () => {
-  console.log('Toggling dropdown:', showDropdown.value)
-  showDropdown.value = !showDropdown.value
+// Hide dropdown when mouse leaves
+const hideDropdown = () => {
+  showDropdown.value = false
 }
 
 // Close dropdown when clicking outside
@@ -141,27 +143,5 @@ const handleLogout = async () => {
   }
 }
 
-// Click outside to close dropdown
-onMounted(() => {
-  document.addEventListener('click', (e) => {
-    if (showDropdown.value) {
-      closeDropdown()
-    }
-  })
-})
 
-// Directive personnalisée pour fermer le dropdown en cliquant à l'extérieur
-const vClickOutside = {
-  beforeMount(el, binding) {
-    el.clickOutsideEvent = (event) => {
-      if (!(el === event.target || el.contains(event.target))) {
-        binding.value()
-      }
-    }
-    document.addEventListener('click', el.clickOutsideEvent)
-  },
-  unmounted(el) {
-    document.removeEventListener('click', el.clickOutsideEvent)
-  }
-}
 </script>
