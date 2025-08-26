@@ -3,7 +3,21 @@
     <!-- Header avec authentification -->
     <header class="bg-dinor-brown shadow-lg">
       <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-        <h1 class="text-2xl font-retro font-bold text-dinor-cream">DINOR</h1>
+        <div class="flex items-center gap-4">
+          <h1 class="text-2xl font-retro font-bold text-dinor-cream">DINOR</h1>
+          <!-- Bouton déconnexion visible pour utilisateurs connectés -->
+          <button 
+            v-if="user" 
+            @click="handleLogout"
+            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full text-sm font-medium transition-colors duration-200 flex items-center gap-1"
+            title="Se déconnecter"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            Déconnexion
+          </button>
+        </div>
         <AuthUserMenu @openLogin="showLoginModal = true" />
       </div>
     </header>
@@ -21,17 +35,26 @@
           Participez ou votez pour vos photos préférées ! Redécouvrez l'art culinaire d'antan avec DINOR.
         </p>
         <div class="cta-buttons flex flex-col sm:flex-row gap-4 justify-center">
+          <!-- Bouton Participer - désactivé si déjà candidat -->
           <button 
             @click="handleParticipate" 
-            class="btn-retro px-8 py-4 text-lg font-bold rounded-full bg-white text-dinor-orange hover:bg-dinor-beige transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+            :disabled="isUserCandidate"
+            :class="isUserCandidate ? 
+              'btn-retro px-8 py-4 text-lg font-bold rounded-full bg-gray-400 text-gray-600 cursor-not-allowed opacity-60' :
+              'btn-retro px-8 py-4 text-lg font-bold rounded-full bg-white text-dinor-orange hover:bg-dinor-beige transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl'"
           >
-            🎯 Participer
+            {{ isUserCandidate ? '✅ Déjà candidat' : '🎯 Participer' }}
           </button>
+          
+          <!-- Bouton Voter - désactivé si candidat -->
           <button 
             @click="scrollToGallery" 
-            class="btn-retro-secondary px-8 py-4 text-lg font-bold rounded-full border-2 border-white text-white hover:bg-white hover:text-dinor-orange transition-all duration-300 transform hover:scale-105"
+            :disabled="isUserCandidate"
+            :class="isUserCandidate ? 
+              'btn-retro-secondary px-8 py-4 text-lg font-bold rounded-full border-2 border-gray-400 text-gray-400 cursor-not-allowed opacity-60' :
+              'btn-retro-secondary px-8 py-4 text-lg font-bold rounded-full border-2 border-white text-white hover:bg-white hover:text-dinor-orange transition-all duration-300 transform hover:scale-105'"
           >
-            ❤️ Voter
+            {{ isUserCandidate ? '🚫 Interdit' : '❤️ Voter' }}
           </button>
           <nuxt-link 
             to="/classements" 
@@ -161,6 +184,11 @@
                 🔒 Se connecter pour voter
               </button>
               
+              <!-- Si utilisateur est candidat -->
+              <div v-else-if="isUserCandidate" class="text-center py-2 text-dinor-olive font-semibold">
+                🚫 Vous ne pouvez pas voter (vous êtes candidat)
+              </div>
+              
               <!-- Si utilisateur connecté mais n'a pas encore voté -->
               <button 
                 v-else-if="!hasVotedToday(candidate.id)"
@@ -220,7 +248,20 @@
 import { ref, onMounted, computed } from 'vue'
 
 // Composables Supabase
+const supabase = useSupabaseClient()
 const user = useSupabaseUser()
+
+// Fonction de déconnexion
+const handleLogout = async () => {
+  try {
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+    await navigateTo('/')
+    showToast('Déconnexion réussie', 'success')
+  } catch (error) {
+    showToast('Erreur lors de la déconnexion: ' + error.message, 'error')
+  }
+}
 
 // Reactive data
 const showRegistrationModal = ref(false)
@@ -385,6 +426,20 @@ const vote = async (candidateId) => {
 const hasVotedToday = (candidateId) => {
   return userVotesToday.value.has(candidateId)
 }
+
+// Vérifier si l'utilisateur connecté est déjà candidat
+const isUserCandidate = computed(() => {
+  if (!user.value) return false
+  
+  return candidates.value.some(candidate => {
+    // Vérifier par email s'il est défini
+    return candidate.email === user.value.email ||
+           // Ou par nom complet si disponible
+           (user.value.user_metadata?.full_name && 
+            `${candidate.prenom} ${candidate.nom}`.toLowerCase() === 
+            user.value.user_metadata.full_name.toLowerCase())
+  })
+})
 
 const loadCandidates = async () => {
   try {

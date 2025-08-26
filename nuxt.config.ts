@@ -38,6 +38,7 @@ export default defineNuxtConfig({
     cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
     cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
     recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY,
+    supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     
     // Public keys (exposed to client-side)
     public: {

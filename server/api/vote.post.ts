@@ -2,7 +2,11 @@ import { createClient } from '@supabase/supabase-js'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
-  const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+  // Utiliser la clé service pour bypasser RLS côté serveur
+  const supabase = createClient(
+    config.public.supabaseUrl, 
+    config.supabaseServiceKey || config.public.supabaseAnonKey
+  )
 
   try {
     const body = await readBody(event)
