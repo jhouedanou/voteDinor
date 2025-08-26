@@ -18,7 +18,29 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Participez au concours photo vintage DINOR - Cuisine des années 60' }
+        { name: 'description', content: 'Participez au concours photo vintage DINOR - Cuisine des années 60' },
+        
+        // Open Graph / Facebook
+        { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: 'https://vote-dinor.vercel.app/' },
+        { property: 'og:title', content: 'Concours Photo Rétro DINOR' },
+        { property: 'og:description', content: 'Participez au concours photo vintage DINOR - Cuisine des années 60' },
+        { property: 'og:image', content: 'https://vote-dinor.vercel.app/og-image' },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        { property: 'og:image:alt', content: 'Logo DINOR - Concours Photo Rétro' },
+        
+        // Twitter
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:url', content: 'https://vote-dinor.vercel.app/' },
+        { name: 'twitter:title', content: 'Concours Photo Rétro DINOR' },
+        { name: 'twitter:description', content: 'Participez au concours photo vintage DINOR - Cuisine des années 60' },
+        { name: 'twitter:image', content: 'https://vote-dinor.vercel.app/og-image' },
+        { name: 'twitter:image:alt', content: 'Logo DINOR - Concours Photo Rétro' },
+        
+        // Autres métadonnées
+        { name: 'theme-color', content: '#D2691E' },
+        { name: 'msapplication-TileColor', content: '#D2691E' }
       ],
       script: [
         {
