@@ -35,6 +35,16 @@
             {{ isUserCandidate ? '✅ Déjà candidat' : '🎯 Participer' }}
           </button>
           
+          <!-- Lien vers l'espace candidat si connecté -->
+          <nuxt-link 
+            v-if="user && isUserCandidate"
+            to="/candidat" 
+            class="px-8 py-4 text-lg font-bold bg-dinor-orange text-white hover:bg-dinor-orange-light transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-center"
+            style="border-radius: 8px;"
+          >
+            📸 Espace Candidat
+          </nuxt-link>
+          
           <!-- Bouton Voter - désactivé si candidat -->
           <button 
             @click="scrollToGallery" 
@@ -273,6 +283,9 @@
       @close="showVoterLogin = false"
       @success="handleAuthSuccess" 
     />
+    
+    <!-- Composant de test pour développement -->
+    <DevTestCandidat />
 
     <!-- Success/Error Toast -->
     <div v-if="toast.show" :class="toastClass" class="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm">

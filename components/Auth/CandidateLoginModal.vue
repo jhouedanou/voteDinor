@@ -150,13 +150,27 @@
         
         <!-- reCAPTCHA -->
         <div 
+          v-if="!isDev"
           ref="recaptchaElement" 
           class="flex justify-center"
         ></div>
         
+        <!-- Checkbox de développement pour remplacer reCAPTCHA -->
+        <div v-if="isDev" class="flex items-center space-x-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <input
+            id="devCheckbox"
+            v-model="devCheckbox"
+            type="checkbox"
+            class="w-4 h-4 text-dinor-orange border-gray-300 rounded focus:ring-dinor-orange"
+          />
+          <label for="devCheckbox" class="text-sm text-yellow-800">
+            ✅ Mode développement : J'accepte les conditions (reCAPTCHA désactivé)
+          </label>
+        </div>
+        
         <button 
           type="submit" 
-          :disabled="loading || !recaptchaToken"
+          :disabled="loading || (!recaptchaToken && !isDev) || (isDev && !devCheckbox)"
           class="w-full bg-gradient-to-r from-dinor-orange to-dinor-orange-light text-white py-3 font-bold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
           style="border-radius: 6px;"
         >
@@ -202,6 +216,8 @@ const errorMessage = ref('')
 const recaptchaToken = ref('')
 const recaptchaElement = ref(null)
 const recaptchaWidgetId = ref(null)
+const devCheckbox = ref(false)
+const isDev = process.env.NODE_ENV === 'development'
 
 const loginForm = ref({
   email: '',
@@ -269,25 +285,33 @@ const signUpWithEmail = async () => {
       throw new Error('Les mots de passe ne correspondent pas')
     }
     
-    if (!recaptchaToken.value) {
-      throw new Error('Veuillez compléter le reCAPTCHA')
-    }
-    
-    // Vérifier le reCAPTCHA
-    const recaptchaResponse = await $fetch('/api/verify-recaptcha', {
-      method: 'POST',
-      body: { token: recaptchaToken.value }
-    })
-    
-    if (!recaptchaResponse.success) {
-      throw new Error('Vérification reCAPTCHA échouée')
+    // Vérifier reCAPTCHA ou checkbox de développement
+    if (!isDev) {
+      if (!recaptchaToken.value) {
+        throw new Error('Veuillez compléter le reCAPTCHA')
+      }
+      
+      // Vérifier le reCAPTCHA
+      const recaptchaResponse = await $fetch('/api/verify-recaptcha', {
+        method: 'POST',
+        body: { token: recaptchaToken.value }
+      })
+      
+      if (!recaptchaResponse.success) {
+        throw new Error('Vérification reCAPTCHA échouée')
+      }
+    } else {
+      if (!devCheckbox.value) {
+        throw new Error('Veuillez accepter les conditions en mode développement')
+      }
+      console.log('🔧 Mode développement : reCAPTCHA contourné')
     }
     
     const { error } = await supabase.auth.signUp({
       email: registerForm.value.email,
       password: registerForm.value.password,
       options: {
-        emailRedirectTo: undefined,
+        emailRedirectTo: `${config.public.siteUrl}/auth/callback`,
         data: {
           first_name: registerForm.value.firstName,
           last_name: registerForm.value.lastName,
@@ -342,9 +366,9 @@ const initRecaptcha = () => {
   }
 }
 
-// Charger reCAPTCHA
+// Charger reCAPTCHA (seulement en production)
 watch([() => props.show, activeTab], ([newShow, newTab]) => {
-  if (newShow && newTab === 'register') {
+  if (newShow && newTab === 'register' && !isDev) {
     nextTick(() => {
       if (window.grecaptcha?.render) {
         initRecaptcha()
@@ -365,6 +389,7 @@ watch(() => props.show, (newVal) => {
   if (!newVal) {
     errorMessage.value = ''
     recaptchaToken.value = ''
+    devCheckbox.value = false
     loginForm.value = { email: '', password: '' }
     registerForm.value = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '' }
   }

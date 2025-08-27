@@ -57,6 +57,13 @@
             >
               👤 Mon Profil
             </nuxt-link>
+            <nuxt-link 
+              to="/candidat" 
+              class="block px-4 py-3 text-dinor-brown hover:bg-dinor-beige transition-colors duration-200 text-sm font-medium"
+              @click="closeDropdown"
+            >
+              📸 Espace Candidat
+            </nuxt-link>
             <hr class="my-1 border-dinor-beige">
             <nuxt-link 
               to="/delete-account" 
