@@ -1,5 +1,5 @@
 <template>
-  <div class="relative">
+  <div class="relative" data-user-menu>
     <!-- Menu utilisateur connecté -->
     <div v-if="user" class="flex items-center gap-4">
       <span class="text-dinor-cream font-medium">
@@ -175,9 +175,12 @@ const handleLogout = async () => {
 
 // Fermer le menu quand on clique à l'extérieur
 onMounted(() => {
+  const menuRef = ref(null)
+  
   const handleClickOutside = (event) => {
-    const dropdown = event.target.closest('.relative')
-    if (!dropdown) {
+    // Vérifier si le clic est à l'extérieur du menu utilisateur
+    const menuElement = document.querySelector('[data-user-menu]')
+    if (menuElement && !menuElement.contains(event.target)) {
       closeDropdown()
     }
   }

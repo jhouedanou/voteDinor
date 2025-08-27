@@ -10,7 +10,12 @@ export default defineNuxtConfig({
   supabase: {
     redirect: false,
     url: process.env.SUPABASE_URL,
-    key: process.env.SUPABASE_ANON_KEY
+    key: process.env.SUPABASE_ANON_KEY,
+    cookieOptions: {
+      maxAge: 60 * 60 * 24 * 365, // 1 an
+      sameSite: 'lax',
+      secure: true
+    }
   },
   app: {
     head: {
