@@ -71,9 +71,11 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     // Private keys (only available on server-side)
-    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
-    cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
+    supabaseStorageEndpoint: process.env.SUPABASE_STORAGE_ENDPOINT,
+    supabaseStorageRegion: process.env.SUPABASE_STORAGE_REGION,
+    supabaseStorageAccessKey: process.env.SUPABASE_STORAGE_ACCESS_KEY,
+    supabaseStorageSecretKey: process.env.SUPABASE_STORAGE_SECRET_KEY,
+    supabaseStorageBucket: process.env.SUPABASE_STORAGE_BUCKET,
     recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY,
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     

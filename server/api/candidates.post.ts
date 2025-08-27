@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import { v2 as cloudinary } from 'cloudinary'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -8,13 +7,6 @@ export default defineEventHandler(async (event) => {
     config.public.supabaseUrl, 
     config.supabaseServiceKey || config.public.supabaseAnonKey
   )
-  
-  // Configuration Cloudinary
-  cloudinary.config({
-    cloud_name: config.cloudinaryCloudName,
-    api_key: config.cloudinaryApiKey,
-    api_secret: config.cloudinaryApiSecret
-  })
 
   try {
     // Récupérer l'utilisateur authentifié
@@ -47,22 +39,27 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Upload photo to Cloudinary
+    // Upload photo to Supabase Storage
     let photo_url = ''
     let photo_filename = ''
     
     if (photo_data) {
       try {
-        const uploadResult = await cloudinary.uploader.upload(photo_data, {
-          folder: 'concours-dinor',
-          transformation: [
-            { width: 800, height: 600, crop: 'limit' },
-            { quality: 'auto', fetch_format: 'auto' }
-          ]
+        // Utiliser notre nouvelle API d'upload Supabase
+        const uploadResponse = await $fetch('/api/upload-photo-supabase', {
+          method: 'POST',
+          body: {
+            photo_data,
+            filename: `${prenom}_${nom}_${Date.now()}`
+          }
         })
         
-        photo_url = uploadResult.secure_url
-        photo_filename = uploadResult.public_id
+        if (uploadResponse.success) {
+          photo_url = uploadResponse.url
+          photo_filename = uploadResponse.filename
+        } else {
+          throw new Error('Échec upload')
+        }
       } catch (uploadError) {
         throw createError({
           statusCode: 500,
