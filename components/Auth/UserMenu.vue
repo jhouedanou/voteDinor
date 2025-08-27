@@ -92,6 +92,16 @@
       >
         📸 Candidat
       </button>
+      <!-- Bouton debug en développement -->
+      <button 
+        v-if="isDev"
+        @click="clearAuthTokens"
+        class="bg-red-500 text-white px-2 py-2 text-xs hover:bg-red-600"
+        style="border-radius: 4px;"
+        title="Nettoyer les tokens (dev)"
+      >
+        🧹
+      </button>
     </div>
   </div>
 </template>
@@ -104,7 +114,23 @@ const user = useSupabaseUser()
 
 const showDropdown = ref(false)
 const isAdmin = ref(false)
+const isDev = process.env.NODE_ENV === 'development'
 let hideTimer = null
+
+// Fonction de nettoyage des tokens
+const clearAuthTokens = () => {
+  if (typeof window !== 'undefined') {
+    // Supprimer localStorage
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('sb-')) {
+        localStorage.removeItem(key)
+      }
+    })
+    
+    console.log('🧹 Tokens nettoyés, rechargement...')
+    window.location.reload()
+  }
+}
 
 // Toggle dropdown (click)
 const toggleDropdown = () => {
@@ -145,11 +171,22 @@ const closeDropdown = () => {
 watch(user, async (newUser) => {
   if (newUser) {
     try {
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', newUser.id)
         .single()
+      
+      if (error) {
+        console.error('Erreur vérification admin:', error)
+        // Si erreur d'auth, nettoyer les tokens
+        if (error.message?.includes('JWT') || error.message?.includes('expired')) {
+          console.log('Token expiré, nettoyage...')
+          await supabase.auth.signOut()
+        }
+        isAdmin.value = false
+        return
+      }
       
       isAdmin.value = profile?.is_admin || false
     } catch (error) {

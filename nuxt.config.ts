@@ -14,7 +14,14 @@ export default defineNuxtConfig({
     cookieOptions: {
       maxAge: 60 * 60 * 24 * 365, // 1 an
       sameSite: 'lax',
-      secure: true
+      secure: process.env.NODE_ENV === 'production'
+    },
+    clientOptions: {
+      auth: {
+        flowType: 'pkce',
+        detectSessionInUrl: true,
+        persistSession: true
+      }
     }
   },
   app: {
@@ -43,6 +50,9 @@ export default defineNuxtConfig({
         { name: 'twitter:image', content: 'https://vote-dinor.vercel.app/og-image' },
         { name: 'twitter:image:alt', content: 'Logo DINOR - Concours Photo Rétro' },
         
+        // Google Search Console verification
+        { name: 'google-site-verification', content: 'oXnPnZlvKZutZtZD4SVVKNtCsEA7zTKMJpSa6Cf1N5A' },
+        
         // Autres métadonnées
         { name: 'theme-color', content: '#D2691E' },
         { name: 'msapplication-TileColor', content: '#D2691E' }
@@ -69,10 +79,10 @@ export default defineNuxtConfig({
     
     // Public keys (exposed to client-side)
     public: {
-      supabaseUrl: process.env.SUPABASE_URL,
-      supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
-      recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY,
-      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://vote-dinor.vercel.app'
+      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
+      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
+      recaptchaSiteKey: process.env.NUXT_PUBLIC_RECAPTCHA_SITE_KEY || process.env.RECAPTCHA_SITE_KEY,
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://vote-dinor.vercel.app')
     }
   }
 })
