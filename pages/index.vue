@@ -286,6 +286,9 @@
     
     <!-- Composant de test pour développement -->
     <DevTestCandidat />
+    
+    <!-- Composant de debug pour développement -->
+    <AuthDebug />
 
     <!-- Success/Error Toast -->
     <div v-if="toast.show" :class="toastClass" class="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm">

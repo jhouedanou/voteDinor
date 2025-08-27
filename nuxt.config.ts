@@ -82,6 +82,8 @@ export default defineNuxtConfig({
     supabaseStorageBucket: process.env.SUPABASE_STORAGE_BUCKET,
     recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY,
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
+    greenApiId: process.env.GREEN_API_ID,
+    greenApiToken: process.env.GREEN_API_TOKEN,
     
     // Public keys (exposed to client-side)
     public: {
