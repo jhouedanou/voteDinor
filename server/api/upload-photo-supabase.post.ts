@@ -41,10 +41,18 @@ export default defineEventHandler(async (event) => {
     const fileId = randomUUID()
     const fileName = `candidates/${fileId}.${imageType}`
     
+    // Vérifier les variables d'environnement
+    if (!config.supabaseStorageEndpoint || !config.supabaseStorageAccessKey) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Configuration Supabase Storage manquante'
+      })
+    }
+    
     // Configuration S3 pour Supabase Storage
     const s3Client = new S3Client({
       endpoint: config.supabaseStorageEndpoint,
-      region: config.supabaseStorageRegion,
+      region: config.supabaseStorageRegion || 'eu-west-2',
       credentials: {
         accessKeyId: config.supabaseStorageAccessKey,
         secretAccessKey: config.supabaseStorageSecretKey,

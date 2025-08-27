@@ -45,26 +45,31 @@ export default defineEventHandler(async (event) => {
     
     if (photo_data) {
       try {
-        // Utiliser notre nouvelle API d'upload Supabase
-        const uploadResponse = await $fetch('/api/upload-photo-supabase', {
-          method: 'POST',
-          body: {
-            photo_data,
-            filename: `${prenom}_${nom}_${Date.now()}`
+        // Essayer d'abord Supabase Storage
+        if (config.supabaseStorageEndpoint && config.supabaseStorageAccessKey) {
+          const uploadResponse = await $fetch('/api/upload-photo-supabase', {
+            method: 'POST',
+            body: {
+              photo_data,
+              filename: `${prenom}_${nom}_${Date.now()}`
+            }
+          })
+          
+          if (uploadResponse.success) {
+            photo_url = uploadResponse.url
+            photo_filename = uploadResponse.filename
           }
-        })
-        
-        if (uploadResponse.success) {
-          photo_url = uploadResponse.url
-          photo_filename = uploadResponse.filename
         } else {
-          throw new Error('Échec upload')
+          // Fallback : Stocker en base64 temporairement
+          console.warn('Supabase Storage non configuré, utilisation fallback')
+          photo_url = photo_data // Temporaire, pas recommandé en prod
+          photo_filename = `temp_${Date.now()}`
         }
       } catch (uploadError) {
-        throw createError({
-          statusCode: 500,
-          statusMessage: 'Erreur upload photo: ' + uploadError.message
-        })
+        console.error('Erreur upload:', uploadError)
+        // En cas d'erreur, stocker temporairement en base64
+        photo_url = photo_data
+        photo_filename = `fallback_${Date.now()}`
       }
     }
     

@@ -14,13 +14,17 @@ export default defineNuxtConfig({
     cookieOptions: {
       maxAge: 60 * 60 * 24 * 365, // 1 an
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production'
+      secure: true, // Toujours sécurisé pour la production
+      httpOnly: false, // Permettre l'accès JavaScript
+      domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : 'localhost'
     },
     clientOptions: {
       auth: {
         flowType: 'pkce',
         detectSessionInUrl: true,
-        persistSession: true
+        persistSession: true,
+        autoRefreshToken: true,
+        storage: process.env.NODE_ENV === 'production' ? undefined : 'localStorage'
       }
     }
   },
