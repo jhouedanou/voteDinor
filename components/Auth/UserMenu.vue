@@ -9,9 +9,10 @@
       <div class="relative">
         <button 
           @mouseenter="showDropdown = true"
-          @mouseleave="hideDropdown"
-          class="w-10 h-10 bg-dinor-beige rounded-full flex items-center justify-center hover:bg-dinor-cream transition-colors duration-300"
-          title="Survoler pour voir le menu"
+          @mouseleave="scheduleHideDropdown"
+          @click="toggleDropdown"
+          class="w-10 h-10 bg-dinor-beige rounded-full flex items-center justify-center hover:bg-dinor-cream transition-colors duration-300 cursor-pointer"
+          title="Cliquez ou survolez pour voir le menu"
         >
           <img 
             v-if="user.user_metadata?.avatar_url" 
@@ -27,15 +28,16 @@
         <!-- Dropdown Menu -->
         <div 
           v-if="showDropdown" 
-          @mouseenter="showDropdown = true"
-          @mouseleave="hideDropdown"
+          @mouseenter="cancelHideDropdown"
+          @mouseleave="scheduleHideDropdown"
           @click.stop
-          class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border-2 border-dinor-olive z-50"
+          class="absolute right-0 mt-1 w-52 bg-white rounded-lg shadow-xl border-2 border-dinor-olive z-50 transition-all duration-200 ease-out"
+          style="margin-top: 2px;"
         >
           <div class="py-2">
             <nuxt-link 
               to="/classements" 
-              class="block px-4 py-2 text-dinor-brown hover:bg-dinor-beige transition-colors duration-200"
+              class="block px-4 py-3 text-dinor-brown hover:bg-dinor-beige transition-colors duration-200 text-sm font-medium"
               @click="closeDropdown"
             >
               🏆 Classements
@@ -43,29 +45,29 @@
             <nuxt-link 
               v-if="isAdmin"
               to="/admin/dashboard" 
-              class="block px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200 font-semibold"
+              class="block px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 font-semibold text-sm"
               @click="closeDropdown"
             >
               ⚙️ Administration
             </nuxt-link>
             <nuxt-link 
               to="/profile" 
-              class="block px-4 py-2 text-dinor-brown hover:bg-dinor-beige transition-colors duration-200"
+              class="block px-4 py-3 text-dinor-brown hover:bg-dinor-beige transition-colors duration-200 text-sm font-medium"
               @click="closeDropdown"
             >
               👤 Mon Profil
             </nuxt-link>
-            <hr class="my-2 border-dinor-beige">
+            <hr class="my-1 border-dinor-beige">
             <nuxt-link 
               to="/delete-account" 
-              class="block px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200"
+              class="block px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-sm font-medium"
               @click="closeDropdown"
             >
               🗑️ Supprimer mon compte
             </nuxt-link>
             <button 
               @click="handleLogout"
-              class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200"
+              class="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-sm font-medium border-t border-dinor-beige"
             >
               🚪 Se déconnecter
             </button>
@@ -102,15 +104,41 @@ const user = useSupabaseUser()
 
 const showDropdown = ref(false)
 const isAdmin = ref(false)
+let hideTimer = null
 
-// Hide dropdown when mouse leaves
-const hideDropdown = () => {
-  showDropdown.value = false
+// Toggle dropdown (click)
+const toggleDropdown = () => {
+  showDropdown.value = !showDropdown.value
+  if (hideTimer) {
+    clearTimeout(hideTimer)
+    hideTimer = null
+  }
 }
 
-// Close dropdown when clicking outside
+// Schedule hide with delay
+const scheduleHideDropdown = () => {
+  hideTimer = setTimeout(() => {
+    showDropdown.value = false
+    hideTimer = null
+  }, 300) // 300ms delay
+}
+
+// Cancel scheduled hide
+const cancelHideDropdown = () => {
+  if (hideTimer) {
+    clearTimeout(hideTimer)
+    hideTimer = null
+  }
+  showDropdown.value = true
+}
+
+// Close dropdown immediately
 const closeDropdown = () => {
   showDropdown.value = false
+  if (hideTimer) {
+    clearTimeout(hideTimer)
+    hideTimer = null
+  }
 }
 
 // Vérifier si l'utilisateur est admin
@@ -138,12 +166,31 @@ const handleLogout = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
     
-    showDropdown.value = false
+    closeDropdown()
     await navigateTo('/')
   } catch (error) {
     console.error('Erreur lors de la déconnexion:', error)
   }
 }
+
+// Fermer le menu quand on clique à l'extérieur
+onMounted(() => {
+  const handleClickOutside = (event) => {
+    const dropdown = event.target.closest('.relative')
+    if (!dropdown) {
+      closeDropdown()
+    }
+  }
+  
+  document.addEventListener('click', handleClickOutside)
+  
+  onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside)
+    if (hideTimer) {
+      clearTimeout(hideTimer)
+    }
+  })
+})
 
 
 </script>
