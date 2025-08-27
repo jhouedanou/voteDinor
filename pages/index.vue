@@ -155,7 +155,7 @@
           Votez pour vos photos préférées
         </h2>
         <p class="vote-rules text-center text-lg text-dinor-brown mb-12">
-          ⏰ 1 vote par candidat par jour maximum
+          🔒 1 vote par candidat par jour par compte connecté
         </p>
         
         <div class="candidates-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -602,13 +602,29 @@ const loadCandidates = async () => {
 
 const checkVotesToday = async () => {
   try {
-    // TODO: Check votes from localStorage or API based on IP
-    const savedVotes = localStorage.getItem('votes_today')
-    if (savedVotes) {
-      userVotesToday.value = new Set(JSON.parse(savedVotes))
+    // Si utilisateur connecté, récupérer ses votes depuis l'API
+    if (user.value) {
+      const supabase = useSupabaseClient()
+      const { data: session } = await supabase.auth.getSession()
+      
+      if (session?.session?.access_token) {
+        const response = await $fetch('/api/user-votes', {
+          headers: {
+            'Authorization': `Bearer ${session.session.access_token}`
+          }
+        })
+        
+        if (response.votes) {
+          userVotesToday.value = new Set(response.votes)
+        }
+      }
+    } else {
+      // Si pas connecté, vider les votes
+      userVotesToday.value = new Set()
     }
   } catch (error) {
-    console.error('Erreur vérification votes:', error)
+    console.error('Erreur vérification votes utilisateur:', error)
+    userVotesToday.value = new Set()
   }
 }
 
@@ -618,10 +634,10 @@ onMounted(async () => {
   await checkVotesToday()
 })
 
-// Watch for votes changes to save to localStorage
-watch(userVotesToday, (newVotes) => {
-  localStorage.setItem('votes_today', JSON.stringify([...newVotes]))
-}, { deep: true })
+// Recharger les votes quand l'utilisateur change (connexion/déconnexion)
+watch(user, async (newUser) => {
+  await checkVotesToday()
+}, { immediate: false })
 </script>
 
 <style scoped>
